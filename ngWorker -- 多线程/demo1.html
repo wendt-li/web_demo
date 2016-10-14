@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>计数demo</title>
+		<script type="text/javascript" src="../js/angular.min.js"></script>
+		<script type="text/javascript" src="../js/ngWorker.js"></script>
+		<script type="text/javascript">
+			/**
+			 *
+			 * 什么是 Web Worker？ 当在 HTML 页面中执行脚本时，页面的状态是不可响应的，直到脚本已完成。
+			 * web worker 是运行在后台的 JavaScript，独立于其他脚本，不会影响页面的性能。
+			 * 您可以继续做任何愿意做的事情：点击、选取内容等等，而此时 web worker 在后台运行。
+			 */
+			angular.module('ngWorkerDemo', ['ngWorker'])
+				.factory('MyWorker1', function() {
+
+					return function() {
+						var i = 0,
+							t = -1;
+
+						function _timedCount() {
+							i = i + 1;
+							postMessage(i);
+							t = setTimeout("_timedCount()", 500);
+						}
+
+						//  
+						this.onmessage = function(e) {
+							console.log('onmessage', e.data);
+							switch(e.data.command) {
+								case 'start':
+									start();
+									break;
+								case 'stop':
+									stop();
+									break;
+								case 'clear':
+									clear();
+									break;
+							}
+						};
+
+						function start() {
+							console.log('start');
+							_timedCount();
+						};
+
+						function stop() {
+							console.log('stop');
+							t > -1 && clearTimeout(t);
+						};
+
+						function stop() {
+							console.log('stop');
+							t > -1 && clearTimeout(t);
+
+						};
+
+						function clear() {
+							stop();
+							i = 0;
+							postMessage(i);
+						};
+					};
+				})
+				.run(function($rootScope, wsWorker, MyWorker1) {
+
+					$rootScope.data = {
+						value: 0
+					};
+					//建立一个worker
+					wsWorker.$new('worker1', MyWorker1);
+
+					//监听
+					wsWorker.onMessage('worker1', function(e) {
+						$rootScope.data.value = e.data;
+						$rootScope.$apply();
+						console.log('worker1', e.data);
+					});
+
+					//worker1启动事件
+					$rootScope.start = function() {
+						wsWorker.postMessage('worker1', {
+							command: 'start'
+						});
+					};
+					//worker1停止事件
+					$rootScope.stop = function() {
+						wsWorker.postMessage('worker1', {
+							command: 'stop'
+						});
+					};
+					//worker1清除事件
+					$rootScope.clear = function() {
+						wsWorker.postMessage('worker1', {
+							command: 'clear'
+						});
+					};
+					//终止worker1，不在可用
+					$rootScope.terminate = function() {
+						wsWorker.terminate('worker1');
+					};
+
+				});
+		</script>
+	</head>
+
+	<body ng-app="ngWorkerDemo">
+		<input ng-model="data.value">
+		<button ng-click="start()">start</button>
+		<button ng-click="stop()">stop</button>
+		<button ng-click="clear()">clear</button>
+		<button ng-click="terminate()">terminate</button>
+	</body>
+
+</html>
