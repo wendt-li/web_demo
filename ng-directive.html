@@ -1,0 +1,118 @@
+<!doctype html>
+<html ng-app="myApp">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<script type="text/javascript" src="js/angular.min.js"></script>
+	</head>
+
+	<body ng-controller="myAppCtrl">
+
+		<div id="">
+			A:
+			<xingoo></xingoo>
+		</div>
+
+		<div id="">
+			E:
+			<div xingoo></div>
+		</div>
+
+		<div id="">
+			C:
+			<div class="xingoo"></div>
+		</div>
+
+		<div id="">
+			M:
+			<!-- directive:xingoo -->
+		</div>
+
+		<div id="">
+			内嵌:
+			<test>我还在！</test>
+		</div>
+
+		<div id="">
+			复用:
+			<loader howtoload='loadData1()'>loadData1</loader>
+			<loader howToLoad='loadData2()'>loadData2</loader>
+		</div>
+
+		<div id="">
+			URL:
+			<url-dir></url-dir>
+		</div>
+
+		<script type="text/javascript">
+			var myAppModule = angular.module("myApp", []);
+
+			myAppModule.controller("myAppCtrl", ["$scope", function($scope) {
+				$scope.count1 = 0;
+				$scope.loadData1 = function() {
+					$scope.count1 = $scope.count1 + 1;
+					console.log("myAppCtrl loadData1!" + $scope.count1);
+				}
+
+				$scope.count2 = 0;
+				$scope.loadData2 = function() {
+					$scope.count2 = $scope.count2 + 1;
+					console.log("myAppCtrl loadData2!" + $scope.count2);
+				}
+			}]);
+
+			myAppModule.directive("xingoo", function() {
+				return {
+					restrict: 'AECM',
+					template: '<div>hello my directive</div>',
+					replace: true
+				}
+			});
+
+			myAppModule.directive("test", function() {
+				return {
+					restrict: 'AECM',
+					transclude: true,
+					template: "<div>床前明月光 <i ng-transclude></i> 疑似地上霜</div>"
+				}
+			});
+
+			//1.标签中属性使用驼峰法命名，在指令中要转换成全部小写。
+			//2.指令中调用的仅仅是属性的名字，没有方法括号。
+			//3.应用时，属性对应的值是该控制器内声明的执行方法。
+			myAppModule.directive("loader", function() {
+				return {
+					restrict: "AE",
+					transclude: true,
+					template: "<div><div ng-transclude></div></div>",
+					link: function(scope, element, attr) {
+						element.bind("mouseenter", function() {
+							scope.$apply(attr.howtoload);
+						});
+					}
+				}
+			});
+
+			myAppModule.directive("urlDir", function($sce) {
+				return {
+					restrict: "AE",
+					replace: true,
+					scope: {}, //scope=true,标签拥有自己的作用域
+					template: templateFunction,
+					link: linkFun
+				}
+
+				function templateFunction() {
+					return "<div ><div ng-include ='myHtmlUrl'></div></div>";
+				}
+
+				function linkFun(scope, element, attrs) {
+					scope.$watch('scope', function() {
+						scope.myHtmlUrl = $sce.trustAs($sce.RESOURCE_URL, 'html/c.html');
+					});
+				}
+			});
+		</script>
+	</body>
+
+</html>

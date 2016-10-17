@@ -1,0 +1,87 @@
+<!doctype html>
+<html ng-app="myApp">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<script type="text/javascript" src="js/angular.min.js"></script>
+	</head>
+	<!--	
+	        这里不同的是，在方法内部有一个controller属性，这个并不是ng-controller这种控制器，而是指令对外开放的一个接口，里面声明的方法，在外部可以作为公开的方法使用，其他的指令可以通过依赖，使用这些方法。
+	　　三个指令的代码都差不多，其中require指定了依赖的指令。
+	
+	　　link中多了一个参数supermanCtrl，这个参数猜想是superman中的controller，所以命名采用superman+Ctrl的方式。
+	
+	　　【由于不懂内部原理，这里仅仅是猜想，但是实验证明，如果改变这个参数的名字，会报错。】
+	
+	　　声明了这三个指令，就可以把这三个指令当做super的属性来使用，当注明该属性时，就会触发内部的link内的方法，调用superman中公开的方法。
+	
+	　　总结起来，指令的交互过程：
+	
+	　　1 首先创建一个基本的指令，在controller属性后，添加对外公开的方法。
+	
+	　　2 创建其他交互的指令，在require属性后，添加对应的指令依赖关系；在link中调用公开的方法
+	-->
+
+	<body>
+		<div>
+			<superman>nothing!</superman>
+			<superman strength>strength!</superman>
+			<superman strength speed>strength speed!</superman>
+			<superman strength speed light>strength speed light!</superman>
+		</div>
+		<script type="text/javascript">
+			var myAppModule = angular.module("myApp", []);
+
+			myAppModule.directive("superman", function() {
+				return {
+					scope: {},
+					restrict: 'AE',
+					transclude: true,
+					template: "<div><div ng-transclude></div></div>",
+					controller: function($scope) {
+						$scope.abilities = [];
+						this.addStrength = function() {
+							$scope.abilities.push("strength");
+						};
+						this.addSpeed = function() {
+							$scope.abilities.push("speed");
+						};
+						this.addLight = function() {
+							$scope.abilities.push("light");
+						};
+					},
+					link: function(scope, element, attr) {
+						element.bind("mouseenter", function() {
+							console.log(scope.abilities);
+						});
+					}
+				}
+			});
+			myAppModule.directive("strength", function() {
+				return {
+					require: '^superman',
+					link: function(scope, element, attr, supermanCtrl) {
+						supermanCtrl.addStrength();
+					}
+				}
+			});
+			myAppModule.directive("speed", function() {
+				return {
+					require: '^superman',
+					link: function(scope, element, attr, supermanCtrl) {
+						supermanCtrl.addSpeed();
+					}
+				}
+			});
+			myAppModule.directive("light", function() {
+				return {
+					require: '^superman',
+					link: function(scope, element, attr, supermanCtrl) {
+						supermanCtrl.addLight();
+					}
+				}
+			});
+		</script>
+	</body>
+
+</html>
